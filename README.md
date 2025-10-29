@@ -410,10 +410,10 @@ Built by [Your Name] for the MagicSlides.app internship assignment.
 
 Questions? Found a bug? Just want to chat about the project?
 
-- **Email**: your.email@example.com
-- **GitHub**: [@yourusername](https://github.com/yourusername)
-- **LinkedIn**: [Your Name](https://linkedin.com/in/yourprofile)
-- **Twitter**: [@yourhandle](https://twitter.com/yourhandle)
+- **Email**: singhaditya4333@gmai.com
+- **GitHub**: [@yourusername](https://github.com/Adityas3111N)
+- **LinkedIn**: [Your Name](https://www.linkedin.com/in/aditya-singh-0a7181349/)
+- **Twitter**: [@yourhandle](https://x.com/singhaditya4333)
 
 ---
 
@@ -424,7 +424,7 @@ MIT License - Feel free to use this code however you want!
 ```
 MIT License
 
-Copyright (c) 2025 [Your Name]
+Copyright (c) 2025 [Aditya Singh]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { fetchGmailEmails } from "@/lib/gmail";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";  // Import from new location
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    console.log("Session:", session); // Debug log
-    console.log("Access Token:", session?.accessToken); // Debug log
+    console.log("Session:", session);
+    console.log("Access Token:", session?.accessToken);
     
     if (!session?.accessToken) {
       return NextResponse.json({ error: "Unauthorized - No access token" }, { status: 401 });
