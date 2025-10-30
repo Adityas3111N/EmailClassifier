@@ -1,78 +1,124 @@
 import OpenAI from "openai";
 
+/**
+ * Classifies a single email into a category using AI
+ * Returns one of: Important, Promotions, Social, Marketing, Spam, or General
+ */
 export async function classifyEmail(
   email: { subject: string; from: string; body: string; snippet: string },
-  openAiKey: string
+  apiKey: string
 ) {
   try {
-    console.log(`🔑 Using OpenRouter API key: ${openAiKey.substring(0, 10)}...`);
-    
-    const openai = new OpenAI({ 
-      apiKey: openAiKey,
-      baseURL: "https://openrouter.ai/api/v1",  
+    // Set up connection to OpenRouter (free AI service)
+    const ai = new OpenAI({ 
+      apiKey: apiKey,
+      baseURL: "https://openrouter.ai/api/v1",
       dangerouslyAllowBrowser: false,
     });
 
-    const response = await openai.chat.completions.create({
-  model: "google/gemini-flash-1.5",  
-  messages: [{
-    role: "system",
-    content: "You are an email classifier. Respond with ONLY one word: Important, Promotions, Social, Marketing, Spam, or General. No explanations."
-  }, {
-    role: "user",
-    content: `From: ${email.from}\nSubject: ${email.subject}\nPreview: ${email.snippet || email.body.substring(0, 200)}\n\nCategory:`
-  }],
-  temperature: 0,
-  max_tokens: 10,
-});
+    // Ask AI to classify the email
+    const aiResponse = await ai.chat.completions.create({
+      model: "nvidia/nemotron-nano-12b-2-vl:free",
+      messages: [
+        {
+          role: "system",
+          content: "You are an email classifier. Respond with ONLY one word: Important, Promotions, Social, Marketing, Spam, or General."
+        },
+        {
+          role: "user",
+          content: `
+            From: ${email.from}
+            Subject: ${email.subject}
+            Preview: ${email.snippet || email.body.substring(0, 200)}
+            
+            What category is this email?
+          `
+        }
+      ],
+      temperature: 0, // Make responses consistent
+      max_tokens: 10, // We only need one word back
+    });
 
-    let category = response.choices[0].message.content?.trim() || "General";
+    // Get the AI's answer
+    let aiAnswer = aiResponse.choices[0].message.content?.trim() || "General";
     
-    console.log(`🔍 RAW: "${category}" | "${email.subject.substring(0, 40)}"`);
+    console.log(`🤖 AI said: "${aiAnswer}" for email: "${email.subject.substring(0, 40)}..."`);
     
-    // Clean and validate
-    category = category.replace(/[^a-zA-Z]/g, '');
+    // Clean up the answer (remove punctuation, extra spaces, etc.)
+    const cleanAnswer = aiAnswer.replace(/[^a-zA-Z]/g, '').trim();
+    
+    // Make sure it's a valid category
     const validCategories = ['Important', 'Promotions', 'Social', 'Marketing', 'Spam', 'General'];
-    const matched = validCategories.find(v => v.toLowerCase() === category.toLowerCase());
+    const matchedCategory = validCategories.find(
+      category => category.toLowerCase() === cleanAnswer.toLowerCase()
+    );
     
-    const final = matched || 'General';
-    console.log(`📧 "${email.subject.substring(0, 40)}..." → ${final}`);
+    // Use the matched category, or default to "General" if invalid
+    const finalCategory = matchedCategory || 'General';
     
-    return final;
+    console.log(`✅ Final category: ${finalCategory}`);
+    
+    return finalCategory;
+    
   } catch (error: any) {
-    console.error('❌ Error:', error.message);
+    // If something goes wrong, just mark it as General
+    console.error(' Oops, classification failed:', error.message);
     return 'General';
   }
 }
 
-export async function classifyEmails(emails: any[], openAiKey: string) {
-  console.log(`\n🤖 Starting classification of ${emails.length} emails with OpenRouter...\n`);
+/**
+ * Classifies multiple emails one by one
+ * Shows progress as it goes
+ */
+export async function classifyEmails(emails: any[], apiKey: string) {
+  console.log(`\n Let's classify ${emails.length} emails...\n`);
   
-  const results = [];
+  const classifiedEmails = [];
   
+  // Go through each email one by one
   for (let i = 0; i < emails.length; i++) {
     const email = emails[i];
+    const emailNumber = i + 1;
+    const totalEmails = emails.length;
+    
     try {
-      const category = await classifyEmail(email, openAiKey);
-      console.log(`✅ [${i + 1}/${emails.length}] ${category}`);
-      results.push({ ...email, category });
+      // Classify this email
+      const category = await classifyEmail(email, apiKey);
       
-      // Small delay to avoid rate limits
-      if (i < emails.length - 1) {
-        await new Promise(r => setTimeout(r, 200));
+      console.log(`📧 [${emailNumber}/${totalEmails}] "${email.subject.substring(0, 40)}..." → ${category}`);
+      
+      // Add the category to the email
+      classifiedEmails.push({ 
+        ...email, 
+        category 
+      });
+      
+      // Small pause to avoid overwhelming the API
+      if (emailNumber < totalEmails) {
+        await new Promise(wait => setTimeout(wait, 200));
       }
+      
     } catch (error: any) {
-      console.error(`❌ [${i + 1}/${emails.length}] Error:`, error.message);
-      results.push({ ...email, category: "General" });
+      // If this email fails, just mark it as General and continue
+      console.error(` Email ${emailNumber} failed:`, error.message);
+      classifiedEmails.push({ 
+        ...email, 
+        category: "General" 
+      });
     }
   }
   
-  const summary = results.reduce((acc, e) => {
-    acc[e.category] = (acc[e.category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  // Show a summary of what we found
+  const summary = {};
+  classifiedEmails.forEach(email => {
+    const cat = email.category;
+    summary[cat] = (summary[cat] || 0) + 1;
+  });
   
-  console.log('\n📊 Summary:', summary, '\n');
+  console.log('\n Results:');
+  console.log(summary);
+  console.log('');
   
-  return results;
+  return classifiedEmails;
 }
