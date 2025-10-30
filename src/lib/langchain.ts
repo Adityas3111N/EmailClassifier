@@ -9,27 +9,22 @@ export async function classifyEmail(
     
     const openai = new OpenAI({ 
       apiKey: openAiKey,
-      baseURL: "https://openrouter.ai/api/v1",  // 👈 ONLY CHANGE!
+      baseURL: "https://openrouter.ai/api/v1",  
       dangerouslyAllowBrowser: false,
     });
 
     const response = await openai.chat.completions.create({
-      model: "meta-llama/llama-3.1-8b-instruct:free",  // 👈 FREE MODEL!
-      // Alternative free models:
-      // "mistralai/mistral-7b-instruct:free"
-      // "google/gemma-7b-it:free"
-      // "nousresearch/hermes-3-llama-3.1-405b:free"
-      
-      messages: [{
-        role: "system",
-        content: "You are an email classifier. Respond with ONLY one word: Important, Promotions, Social, Marketing, Spam, or General. No explanations."
-      }, {
-        role: "user",
-        content: `From: ${email.from}\nSubject: ${email.subject}\nPreview: ${email.snippet || email.body.substring(0, 200)}\n\nCategory:`
-      }],
-      temperature: 0,
-      max_tokens: 10,
-    });
+  model: "google/gemini-flash-1.5",  
+  messages: [{
+    role: "system",
+    content: "You are an email classifier. Respond with ONLY one word: Important, Promotions, Social, Marketing, Spam, or General. No explanations."
+  }, {
+    role: "user",
+    content: `From: ${email.from}\nSubject: ${email.subject}\nPreview: ${email.snippet || email.body.substring(0, 200)}\n\nCategory:`
+  }],
+  temperature: 0,
+  max_tokens: 10,
+});
 
     let category = response.choices[0].message.content?.trim() || "General";
     
