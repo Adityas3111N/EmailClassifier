@@ -31,9 +31,9 @@ export default function OpenAIKeyModal({
         </h2>
         
         <p className="text-gray-600 text-sm mb-4">
-          Enter your OpenAI API key to classify emails. Your key is stored locally
-          and never sent to our servers.
-        </p>
+  Enter your OpenRouter API key to classify emails. Your key is stored locally
+  and never sent to our servers.
+</p>
 
         <div className="mb-6">
           <label
@@ -51,16 +51,16 @@ export default function OpenAIKeyModal({
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <p className="text-xs text-gray-500 mt-2">
-            Get your API key from{" "}
-            <a
-              href="https://platform.openai.com/api-keys"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              OpenAI Platform
-            </a>
-          </p>
+  Get your API key from{" "}
+  <a
+    href="https://openrouter.ai/keys"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-blue-600 hover:underline"
+  >
+    OpenRouter Platform
+  </a>
+</p>
         </div>
 
         <div className="flex gap-3">

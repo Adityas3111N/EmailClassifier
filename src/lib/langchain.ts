@@ -5,15 +5,21 @@ export async function classifyEmail(
   openAiKey: string
 ) {
   try {
-    console.log(`🔑 Using API key: ${openAiKey.substring(0, 10)}...`); // Debug
+    console.log(`🔑 Using OpenRouter API key: ${openAiKey.substring(0, 10)}...`);
     
     const openai = new OpenAI({ 
       apiKey: openAiKey,
-      dangerouslyAllowBrowser: false // Server-side only
+      baseURL: "https://openrouter.ai/api/v1",  // 👈 ONLY CHANGE!
+      dangerouslyAllowBrowser: false,
     });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "meta-llama/llama-3.1-8b-instruct:free",  // 👈 FREE MODEL!
+      // Alternative free models:
+      // "mistralai/mistral-7b-instruct:free"
+      // "google/gemma-7b-it:free"
+      // "nousresearch/hermes-3-llama-3.1-405b:free"
+      
       messages: [{
         role: "system",
         content: "You are an email classifier. Respond with ONLY one word: Important, Promotions, Social, Marketing, Spam, or General. No explanations."
@@ -45,7 +51,7 @@ export async function classifyEmail(
 }
 
 export async function classifyEmails(emails: any[], openAiKey: string) {
-  console.log(`\n🤖 Starting classification of ${emails.length} emails with key: ${openAiKey.substring(0, 10)}...\n`);
+  console.log(`\n🤖 Starting classification of ${emails.length} emails with OpenRouter...\n`);
   
   const results = [];
   
