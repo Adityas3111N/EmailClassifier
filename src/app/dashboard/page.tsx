@@ -2,13 +2,16 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import EmailList from "@/components/EmailList";
 import OpenAIKeyModal from "@/components/OpenAIKeyModal";
 import { ClassifiedEmail } from "@/lib/types";
 
 export default function Dashboard() {
   const { data: session } = useSession();
-  const [emails, setEmails] = useState<ClassifiedEmail[]>([]); const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [emails, setEmails] = useState<ClassifiedEmail[]>([]);
+  const [loading, setLoading] = useState(false);
   const [openAiKey, setOpenAiKey] = useState("");
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -28,10 +31,23 @@ export default function Dashboard() {
         setEmails(JSON.parse(savedEmails));
       } catch (error) {
         console.error("Error parsing saved emails:", error);
-        localStorage.removeItem("classified_emails"); // Clear invalid data
+        localStorage.removeItem("classified_emails");
       }
     }
   }, []);
+
+  const handleSignOut = async () => {
+    // Clear localStorage
+    localStorage.removeItem("openai_key");
+    localStorage.removeItem("classified_emails");
+    
+    // Reset state
+    setEmails([]);
+    setOpenAiKey("");
+    
+    // Sign out and go to home
+    await signOut({ callbackUrl: "/" });
+  };
 
   const fetchAndClassifyEmails = async () => {
     if (!openAiKey) {
@@ -41,16 +57,33 @@ export default function Dashboard() {
 
     setLoading(true);
     try {
-      // Fetch emails
       const fetchRes = await fetch(`/api/emails/fetch?count=${emailCount}`);
+      
+      if (!fetchRes.ok) {
+        const errorText = await fetchRes.text();
+        console.error("Fetch failed:", errorText);
+        throw new Error(`Failed to fetch emails: ${fetchRes.status}`);
+      }
+      
       const { emails: fetchedEmails } = await fetchRes.json();
 
-      // Classify emails
+      if (!fetchedEmails || fetchedEmails.length === 0) {
+        alert("No emails found. Please check your Gmail connection.");
+        setLoading(false);
+        return;
+      }
+
       const classifyRes = await fetch("/api/emails/classify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ emails: fetchedEmails, openAiKey }),
       });
+
+      if (!classifyRes.ok) {
+        const errorText = await classifyRes.text();
+        console.error("Classification failed:", errorText);
+        throw new Error(`Failed to classify emails: ${classifyRes.status}`);
+      }
 
       const { emails: classifiedEmails } = await classifyRes.json();
 
@@ -58,7 +91,7 @@ export default function Dashboard() {
       localStorage.setItem("classified_emails", JSON.stringify(classifiedEmails));
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to fetch or classify emails");
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to fetch or classify emails'}`);
     } finally {
       setLoading(false);
     }
@@ -74,18 +107,23 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Email Classifier</h1>
+          <h1 
+            onClick={() => router.push("/")}
+            className="text-2xl font-bold text-gray-800 cursor-pointer hover:text-blue-600 transition-colors"
+          >
+            📧 Email Classifier
+          </h1>
           <div className="flex gap-4 items-center">
             <button
               onClick={() => setShowKeyModal(true)}
               className="text-sm text-gray-600 hover:text-gray-800 cursor-pointer"
             >
-              ⚙️ OpenAI Key
+              ⚙️ API Key
             </button>
             <span className="text-sm text-gray-600">{session?.user?.email}</span>
             <button
-              onClick={() => signOut()}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded cursor-pointer"
+              onClick={handleSignOut}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded cursor-pointer transition-colors"
             >
               Sign Out
             </button>
