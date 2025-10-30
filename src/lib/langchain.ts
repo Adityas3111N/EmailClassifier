@@ -207,31 +207,40 @@ Category:`
 /**
  * Classifies multiple emails one by one
  */
+/**
+ * Classifies multiple emails one by one
+ * Shows progress as it goes
+ */
 export async function classifyEmails(emails: any[], apiKey: string) {
   console.log(`\n🚀 Classifying ${emails.length} emails...\n`);
   
   const classifiedEmails = [];
   
+  // Go through each email one by one
   for (let i = 0; i < emails.length; i++) {
     const email = emails[i];
     const emailNumber = i + 1;
     const totalEmails = emails.length;
     
     try {
+      // Classify this email
       const category = await classifyEmail(email, apiKey);
       
       console.log(`📧 [${emailNumber}/${totalEmails}] "${email.subject.substring(0, 40)}..." → ${category}`);
       
+      // Add the category to the email
       classifiedEmails.push({ 
         ...email, 
         category 
       });
       
+      // Small pause to avoid overwhelming the API
       if (emailNumber < totalEmails) {
         await new Promise(wait => setTimeout(wait, 500));
       }
       
     } catch (error: any) {
+      // If this email fails, just mark it as General and continue
       console.error(`❌ Email ${emailNumber} failed:`, error.message);
       classifiedEmails.push({ 
         ...email, 
@@ -240,7 +249,8 @@ export async function classifyEmails(emails: any[], apiKey: string) {
     }
   }
   
-  const summary = {};
+  // Show a summary of what we found
+  const summary: Record<string, number> = {}; // FIX: Add proper type annotation
   classifiedEmails.forEach(email => {
     const cat = email.category;
     summary[cat] = (summary[cat] || 0) + 1;
